@@ -2,8 +2,7 @@ import streamlit as st
 from data.fetch_data import get_stock_data
 from analysis.lkh_screener import screen_stock
 from analysis.dcf_valuation import calculate_dcf
-import pandas as pd
-import matplotlib.pyplot as plt
+from components.charts import plot_eps_fcf_chart
 
 st.set_page_config(page_title="Screener Saham Indonesia ala LKH + DCF", layout="wide")
 
@@ -42,14 +41,9 @@ if st.button("Analisis"):
         else:
             st.markdown("⚠️ **Overvalued (Perlu kehati-hatian)**")
 
-        # Chart EPS & FCF (jika tersedia)
         if "eps_history" in data and "fcf_history" in data:
             st.subheader("📈 Visualisasi EPS & Free Cash Flow")
-            df_chart = pd.DataFrame({
-                "EPS": data["eps_history"],
-                "FCF": data["fcf_history"]
-            }, index=data["years"])
-            st.line_chart(df_chart)
+            plot_eps_fcf_chart(data["years"], data["eps_history"], data["fcf_history"])
 
     else:
         st.error("Data tidak ditemukan atau kode salah.")
