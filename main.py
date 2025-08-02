@@ -78,6 +78,10 @@ with st.sidebar:
 # ====================== BAGIAN UTAMA ======================
 col1, col2 = st.columns([1, 3])
 
+# Inisialisasi session state
+if "analysis_time" not in st.session_state:
+    st.session_state["analysis_time"] = ""
+
 # Kolom input saham
 with col1:
     st.subheader("🔍 Input Saham")
@@ -90,7 +94,8 @@ with col1:
 
 # Kolom hasil analisis
 with col2:
-    if analyze_btn:
+    if analyze_btn or "current_ticker" in st.session_state:
+        ticker = st.session_state.get("current_ticker", "BBCA")
         st.subheader(f"📊 Hasil Analisis: {ticker}.JK")
         
         # Ambil data saham
@@ -261,12 +266,15 @@ with col2:
             all_revenue = revenue + projection_revenue
             
             # Plot grafik
-            plot_financial_chart(
-                years=all_years,
-                eps_values=all_eps,
-                fcf_values=all_fcf,
-                revenue_values=all_revenue
-            )
+            try:
+                plot_financial_chart(
+                    years=all_years,
+                    eps_values=all_eps,
+                    fcf_values=all_fcf,
+                    revenue_values=all_revenue
+                )
+            except Exception as e:
+                st.error(f"Gagal menampilkan grafik: {str(e)}")
             
             # ================= REKOMENDASI INVESTASI =================
             st.subheader("📝 Rekomendasi Investasi")
@@ -331,8 +339,9 @@ with col2:
         
         for i, col in enumerate(example_cols):
             with col:
-                if st.button(example_tickers[i], use_container_width=True):
-                    st.session_state["ticker_input"] = example_tickers[i]
+                if st.button(example_tickers[i], use_container_width=True, key=f"btn_{i}"):
+                    st.session_state["current_ticker"] = example_tickers[i]
+                    st.session_state["analysis_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     st.experimental_rerun()
 
         # Metodologi analisis
