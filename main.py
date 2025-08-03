@@ -137,34 +137,35 @@ with col2:
             col_a, col_b, col_c = st.columns(3)
             
             # Kartu 1: Skor LKH
+            # Di bagian tampilan skor LKH
             with col_a:
+                 if score is not None:
+                    star_count = int(score // 20)
+                    stars = '⭐' * star_count
+        
+                    st.markdown(f"<div class='metric-card'>"
+                                f"<h4>LKH Score</h4>"
+                                f"<h2 style='color:#3498db;'>{score}/100</h2>"
+                                f"<p>{stars}</p>"
+                                f"</div>", unsafe_allow_html=True)
+        
+                    if score >= 80:
+                        st.success("✅ Sangat sesuai kriteria investasi LKH")
+                    elif score >= 60:
+                        st.warning("⚠️ Cukup sesuai, perlu analisis lebih lanjut")
+                    else:
+                        # Jika skor rendah karena data tidak lengkap
+                        if data.get("PER") is None or data.get("PBV") is None or data.get("ROE") is None:
+                            st.error("❌ Data tidak lengkap untuk penilaian menyeluruh")
+                        else:
+                            st.error("❌ Tidak memenuhi standar minimal")
+            else:
                 st.markdown(f"<div class='metric-card'>"
                             f"<h4>LKH Score</h4>"
-                            f"<h2 style='color:#3498db;'>{score}/100</h2>"
-                            f"<p>{'⭐' * (score//20)}</p>"
+                            f"<h2 style='color:#3498db;'>N/A</h2>"
+                            f"<p>Data tidak tersedia</p>"
                             f"</div>", unsafe_allow_html=True)
-                
-                if score >= 80:
-                    st.success("✅ Sangat sesuai kriteria investasi LKH")
-                elif score >= 60:
-                    st.warning("⚠️ Cukup sesuai, perlu analisis lebih lanjut")
-                else:
-                    st.error("❌ Tidak memenuhi standar minimal")
-            
-            # Kartu 2: Valuasi DCF
-            with col_b:
-                st.markdown(f"<div class='metric-card'>"
-                            f"<h4>Nilai Intrinsik (DCF)</h4>"
-                            f"<h2 style='color:#3498db;'>Rp {dcf_value:,.0f}</h2>"
-                            f"<p>vs Harga: Rp {price:,.0f}</p>"
-                            f"</div>", unsafe_allow_html=True)
-                
-                valuation_status = (
-                    f"✅ Undervalued ({margin_safety:.1f}% margin safety)" 
-                    if dcf_value > price 
-                    else f"❌ Overvalued ({abs(margin_safety):.1f}% di atas nilai wajar)"
-                )
-                st.success(valuation_status) if dcf_value > price else st.error(valuation_status)
+                st.error("❌ Data tidak tersedia untuk penilaian")
             
             # Kartu 3: Valuasi Relatif
             with col_c:
