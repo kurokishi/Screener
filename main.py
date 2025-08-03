@@ -105,13 +105,17 @@ with col2:
         if data and "error" not in data:
             # 1. Hitung skor LKH
             with st.spinner("Menghitung skor investasi LKH..."):
-                score = screen_stock_lkh({
-                    "PER": data.get("PER"),
-                    "PBV": data.get("PBV"),
-                    "ROE": data.get("ROE"),
-                    "DER": data.get("DER"),
-                    "EPS_Growth": data.get("EPS_Growth")
-                })
+                try:
+                    score = screen_stock_lkh({
+                        "PER": data.get("PER"),
+                        "PBV": data.get("PBV"),
+                        "ROE": data.get("ROE"),
+                        "DER": data.get("DER"),
+                        "EPS_Growth": data.get("EPS_Growth")
+                    })
+                except Exception as e:
+                    st.error(f"Error menghitung skor LKH: {str(e)}")
+                    score = None
             
             # 2. Hitung valuasi DCF
             with st.spinner("Menghitung valuasi DCF..."):
@@ -122,13 +126,17 @@ with col2:
                 if fcf <= 0:
                     fcf = data.get("market_cap", 1e9) * 0.05
                 
-                dcf_value = calculate_dcf(
-                    fcf=fcf,
-                    growth_rate=default_growth/100,
-                    discount_rate=default_discount/100,
-                    terminal_growth=default_terminal/100,
-                    years=analysis_years
-                )
+                try:
+                    dcf_value = calculate_dcf(
+                        fcf=fcf,
+                        growth_rate=default_growth/100,
+                        discount_rate=default_discount/100,
+                        terminal_growth=default_terminal/100,
+                        years=analysis_years
+                    )
+                except Exception as e:
+                    st.error(f"Error menghitung DCF: {str(e)}")
+                    dcf_value = 0
                 
                 # Hitung margin of safety
                 margin_safety = ((dcf_value - price) / price) * 100 if price > 0 else 0
@@ -137,35 +145,55 @@ with col2:
             col_a, col_b, col_c = st.columns(3)
             
             # Kartu 1: Skor LKH
-            # Di bagian tampilan skor LKH
             with col_a:
-                 if score is not None:
+                if score is not None:
                     star_count = int(score // 20)
                     stars = '⭐' * star_count
-        
+                    
                     st.markdown(f"<div class='metric-card'>"
                                 f"<h4>LKH Score</h4>"
                                 f"<h2 style='color:#3498db;'>{score}/100</h2>"
                                 f"<p>{stars}</p>"
                                 f"</div>", unsafe_allow_html=True)
-        
+                    
                     if score >= 80:
                         st.success("✅ Sangat sesuai kriteria investasi LKH")
                     elif score >= 60:
                         st.warning("⚠️ Cukup sesuai, perlu analisis lebih lanjut")
                     else:
                         # Jika skor rendah karena data tidak lengkap
-                        if data.get("PER") is None or data.get("PBV") is None or data.get("ROE") is None:
+                        if (data.get("PER") is None or 
+                            data.get("PBV") is None or 
+                            data.get("ROE") is None or 
+                            data.get("DER") is None):
                             st.error("❌ Data tidak lengkap untuk penilaian menyeluruh")
                         else:
                             st.error("❌ Tidak memenuhi standar minimal")
-                  else:
-                     st.markdown(f"<div class='metric-card'>"
+                else:
+                    st.markdown(f"<div class='metric-card'>"
                                 f"<h4>LKH Score</h4>"
                                 f"<h2 style='color:#3498db;'>N/A</h2>"
                                 f"<p>Data tidak tersedia</p>"
                                 f"</div>", unsafe_allow_html=True)
-                     st.error("❌ Data tidak tersedia untuk penilaian")
+                    st.error("❌ Data tidak tersedia untuk penilaian")
+            
+            # Kartu 2: Valuasi DCF
+            with col_b:
+                st.markdown(f"<div class='metric-card'>"
+                            f"<h4>Nilai Intrinsik (DCF)</h4>"
+                            f"<h2 style='color:#3498db;'>Rp {dcf_value:,.0f}</h2>"
+                            f"<p>vs Harga: Rp {price:,.0f}</p>"
+                            f"</div>", unsafe_allow_html=True)
+                
+                valuation_status = (
+                    f"✅ Undervalued ({margin_safety:.1f}% margin safety)" 
+                    if dcf_value > price 
+                    else f"❌ Overvalued ({abs(margin_safety):.1f}% di atas nilai wajar)"
+                )
+                if dcf_value > price:
+                    st.success(valuation_status)
+                else:
+                    st.error(valuation_status)
             
             # Kartu 3: Valuasi Relatif
             with col_c:
@@ -211,36 +239,39 @@ with col2:
                 st.subheader("📈 Analisis Sensitivitas DCF")
                 
                 with st.spinner("Menghitung sensitivitas..."):
-                    sensitivity = dcf_sensitivity_analysis(
-                        base_fcf=fcf,
-                        base_growth=default_growth/100,
-                        base_discount=default_discount/100,
-                        base_terminal=default_terminal/100,
-                        years=analysis_years
-                    )
-                
-                # Format hasil sensitivitas
-                growth_rates = [default_growth*0.7, default_growth, default_growth*1.3]
-                discount_rates = [default_discount*0.9, default_discount, default_discount*1.1]
-                
-                sens_matrix = np.zeros((3, 3))
-                for i, gr in enumerate(growth_rates):
-                    for j, dr in enumerate(discount_rates):
-                        key = f"Scenario_G{i+1}_DR{j+1}"
-                        sens_matrix[i, j] = sensitivity.get(key, 0)
-                
-                # Tabel sensitivitas
-                sens_df = pd.DataFrame(
-                    sens_matrix,
-                    index=[f"Growth {gr:.1f}%" for gr in growth_rates],
-                    columns=[f"Discount {dr:.1f}%" for dr in discount_rates]
-                )
-                
-                st.dataframe(
-                    sens_df.style.format("{:,.0f}").background_gradient(cmap="RdYlGn"), 
-                    use_container_width=True
-                )
-                st.caption("Heatmap Sensitivitas: Nilai Intrinsik (Rp)")
+                    try:
+                        sensitivity = dcf_sensitivity_analysis(
+                            base_fcf=fcf,
+                            base_growth=default_growth/100,
+                            base_discount=default_discount/100,
+                            base_terminal=default_terminal/100,
+                            years=analysis_years
+                        )
+                        
+                        # Format hasil sensitivitas
+                        growth_rates = [default_growth*0.7, default_growth, default_growth*1.3]
+                        discount_rates = [default_discount*0.9, default_discount, default_discount*1.1]
+                        
+                        sens_matrix = np.zeros((3, 3))
+                        for i, gr in enumerate(growth_rates):
+                            for j, dr in enumerate(discount_rates):
+                                key = f"Scenario_G{i+1}_DR{j+1}"
+                                sens_matrix[i, j] = sensitivity.get(key, 0)
+                        
+                        # Tabel sensitivitas
+                        sens_df = pd.DataFrame(
+                            sens_matrix,
+                            index=[f"Growth {gr:.1f}%" for gr in growth_rates],
+                            columns=[f"Discount {dr:.1f}%" for dr in discount_rates]
+                        )
+                        
+                        st.dataframe(
+                            sens_df.style.format("{:,.0f}").background_gradient(cmap="RdYlGn"), 
+                            use_container_width=True
+                        )
+                        st.caption("Heatmap Sensitivitas: Nilai Intrinsik (Rp)")
+                    except Exception as e:
+                        st.error(f"Gagal menghitung analisis sensitivitas: {str(e)}")
             
             # ================= VISUALISASI DATA =================
             st.subheader("📊 Tren Historis dan Proyeksi")
@@ -280,14 +311,14 @@ with col2:
             # ================= REKOMENDASI INVESTASI =================
             st.subheader("📝 Rekomendasi Investasi")
             
-            if score >= 80 and dcf_value > price and data.get("DER", 0) < 1:
+            if score and score >= 80 and dcf_value > price and data.get("DER", 0) < 1:
                 st.success("""
                 **✅ REKOMENDASI BELI**
                 - Memenuhi kriteria ketat investasi nilai (LKH)
                 - Margin of safety yang cukup
                 - Struktur keuangan sehat (DER rendah)
                 """)
-            elif score >= 60 and dcf_value > price * 1.1:
+            elif score and score >= 60 and dcf_value > price * 1.1:
                 st.info("""
                 **🟡 POTENSI BELI DENGAN CATATAN**
                 - Memenuhi sebagian kriteria investasi nilai
