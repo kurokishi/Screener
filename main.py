@@ -159,13 +159,13 @@ with col2:
                             st.error("❌ Data tidak lengkap untuk penilaian menyeluruh")
                         else:
                             st.error("❌ Tidak memenuhi standar minimal")
-             else:
-                st.markdown(f"<div class='metric-card'>"
-                            f"<h4>LKH Score</h4>"
-                            f"<h2 style='color:#3498db;'>N/A</h2>"
-                            f"<p>Data tidak tersedia</p>"
-                            f"</div>", unsafe_allow_html=True)
-                st.error("❌ Data tidak tersedia untuk penilaian")
+                  else:
+                     st.markdown(f"<div class='metric-card'>"
+                                f"<h4>LKH Score</h4>"
+                                f"<h2 style='color:#3498db;'>N/A</h2>"
+                                f"<p>Data tidak tersedia</p>"
+                                f"</div>", unsafe_allow_html=True)
+                     st.error("❌ Data tidak tersedia untuk penilaian")
             
             # Kartu 3: Valuasi Relatif
             with col_c:
