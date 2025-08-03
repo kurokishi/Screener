@@ -13,12 +13,6 @@ def screen_stock_lkh(data):
     Returns:
         Skor 0-100 mewakili kelayakan investasi
     """
-    # Validasi data input
-    required_keys = ["PER", "PBV", "ROE", "DER", "EPS_Growth"]
-    for key in required_keys:
-        if key not in data or data[key] is None:
-            raise ValueError(f"Data {key} tidak tersedia atau invalid")
-    
     # Inisialisasi subskor
     valuation_score = 0
     profitability_score = 0
@@ -27,47 +21,52 @@ def screen_stock_lkh(data):
     
     # 1. Valuasi (30% bobot total)
     ## Price Earning Ratio (PER)
-    if data["PER"] <= 8:
-        valuation_score += 50  # PER sangat murah
-    elif data["PER"] <= 12:
-        valuation_score += 30  # PER wajar
-    elif data["PER"] <= 15:
-        valuation_score += 10  # PER agak tinggi
+    if data.get("PER") is not None:
+        if data["PER"] <= 8:
+            valuation_score += 50  # PER sangat murah
+        elif data["PER"] <= 12:
+            valuation_score += 30  # PER wajar
+        elif data["PER"] <= 15:
+            valuation_score += 10  # PER agak tinggi
         
     ## Price to Book Value (PBV)
-    if data["PBV"] < 0.8:
-        valuation_score += 50  # Harga dibawah nilai buku
-    elif data["PBV"] < 1.2:
-        valuation_score += 30  # PBV wajar
-    elif data["PBV"] < 2:
-        valuation_score += 10
+    if data.get("PBV") is not None:
+        if data["PBV"] < 0.8:
+            valuation_score += 50  # Harga dibawah nilai buku
+        elif data["PBV"] < 1.2:
+            valuation_score += 30  # PBV wajar
+        elif data["PBV"] < 2:
+            valuation_score += 10
     
     # 2. Profitabilitas (30% bobot total)
     ## Return on Equity (ROE)
-    if data["ROE"] >= 20:
-        profitability_score = 100  # ROE sangat tinggi
-    elif data["ROE"] >= 15:
-        profitability_score = 80   # ROE baik
-    elif data["ROE"] >= 10:
-        profitability_score = 40   # ROE minimal
+    if data.get("ROE") is not None:
+        if data["ROE"] >= 20:
+            profitability_score = 100  # ROE sangat tinggi
+        elif data["ROE"] >= 15:
+            profitability_score = 80   # ROE baik
+        elif data["ROE"] >= 10:
+            profitability_score = 40   # ROE minimal
     
     # 3. Pertumbuhan (20% bobot total)
     ## EPS Growth
-    if data["EPS_Growth"] >= 15:
-        growth_score = 100  # Pertumbuhan tinggi
-    elif data["EPS_Growth"] >= 10:
-        growth_score = 70
-    elif data["EPS_Growth"] >= 5:
-        growth_score = 40
+    if data.get("EPS_Growth") is not None:
+        if data["EPS_Growth"] >= 15:
+            growth_score = 100  # Pertumbuhan tinggi
+        elif data["EPS_Growth"] >= 10:
+            growth_score = 70
+        elif data["EPS_Growth"] >= 5:
+            growth_score = 40
     
     # 4. Kesehatan Keuangan (20% bobot total)
     ## Debt to Equity Ratio (DER)
-    if data["DER"] < 0.3:
-        financial_health_score = 100  # Utang sangat rendah
-    elif data["DER"] < 0.8:
-        financial_health_score = 80   # Utang terkendali
-    elif data["DER"] < 1:
-        financial_health_score = 30
+    if data.get("DER") is not None:
+        if data["DER"] < 0.3:
+            financial_health_score = 100  # Utang sangat rendah
+        elif data["DER"] < 0.8:
+            financial_health_score = 80   # Utang terkendali
+        elif data["DER"] < 1:
+            financial_health_score = 30
     
     # Hitung skor akhir dengan bobot
     total_score = (
@@ -76,5 +75,10 @@ def screen_stock_lkh(data):
         0.2 * growth_score +
         0.2 * financial_health_score
     )
+    
+    # Jika data penting tidak tersedia, berikan skor minimum
+    if (data.get("PER") is None or data.get("PBV") is None or 
+        data.get("ROE") is None or data.get("DER") is None):
+        total_score = max(total_score, 30)  # Minimum 30 jika data tidak lengkap
     
     return round(total_score, 2)
