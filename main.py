@@ -237,8 +237,15 @@ with col2:
                               "Risiko Rendah" if data.get('beta', 0) < 1 else "Risiko Tinggi")
                 
                 with fund_cols[3]:
-                    st.metric("Free Cash Flow", f"Rp {data.get('FCF', 0):,.0f}")
-                    st.metric("Volume", f"{data.get('volume', 0):,.0f}")
+                    fcf_value = data.get('FCF')
+                    if fcf_value is None:
+                        fcf_value = 0
+                    st.metric("Free Cash Flow", f"Rp {fcf_value:,.0f}")
+
+                    volume_value = data.get('volume')
+                    if volume_value is None:
+                       volume_value = 0
+                    st.metric("Volume", f"{volume_value:,.0f}")
             
             # ================= ANALISIS SENSITIVITAS =================
             if show_sensitivity:
