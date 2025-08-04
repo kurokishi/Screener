@@ -123,7 +123,7 @@ with col2:
                 price = data.get("price", 0)
                 
                 # Fallback jika FCF negatif
-                if fcf <= 0:
+                if fcf is None or fcf <= 0:
                     fcf = data.get("market_cap", 1e9) * 0.05
                 
                 try:
