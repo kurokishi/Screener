@@ -229,7 +229,7 @@ with col2:
                         current_ratio = data.get('current_ratio')
                         if current_ratio is None:
                            current_ratio = 0.0
-                            st.metric("Current Ratio", f"{current_ratio:.1f}")
+                           st.metric("Current Ratio", f"{current_ratio:.1f}")
                 
                 with fund_cols[2]:
                     st.metric("Market Cap", f"Rp {data.get('market_cap', 0):,.0f}")
