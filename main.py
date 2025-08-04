@@ -221,9 +221,15 @@ with col2:
                     st.metric("Profit Margin", f"{data.get('profit_margin', 0):.1f}%")
                 
                 with fund_cols[1]:
-                    st.metric("DER", f"{data.get('DER', 0):.2f}", 
-                              "Rendah" if data.get('DER', 0) < 0.5 else "Tinggi")
-                    st.metric("Current Ratio", f"{data.get('current_ratio', 0):.1f}")
+                    der_value = data.get('DER')
+                    if der_value is None:
+                        der_value = 0.0  # Konversi None menjadi float 0.0
+                        st.metric("DER", f"{der_value:.2f}", 
+                        "Rendah" if der_value < 0.5 else "Tinggi")
+                        current_ratio = data.get('current_ratio')
+                        if current_ratio is None:
+                           current_ratio = 0.0
+                            st.metric("Current Ratio", f"{current_ratio:.1f}")
                 
                 with fund_cols[2]:
                     st.metric("Market Cap", f"Rp {data.get('market_cap', 0):,.0f}")
